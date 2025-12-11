@@ -1,0 +1,34 @@
+﻿@model IEnumerable<BulkImportRestaurants.Models.Restaurant>
+
+@{
+    ViewData["Title"] = "Restaurant Catalog";
+}
+
+<h2>Approved Restaurants</h2>
+
+@if (!Model.Any())
+{
+    <p>No approved restaurants yet.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var r in Model)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@r.Name</h5>
+                        <p class="card-text">@r.Description</p>
+                        <p class="card-text">
+                            <small class="text-muted">@r.Address</small>
+                        </p>
+                        <a asp-action="Details" asp-route-id="@r.Id" class="btn btn-primary btn-sm">
+                            View Menu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

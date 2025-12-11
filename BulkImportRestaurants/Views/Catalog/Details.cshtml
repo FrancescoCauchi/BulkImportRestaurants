@@ -1,0 +1,41 @@
+﻿@model IEnumerable<BulkImportRestaurants.Models.MenuItem>
+
+@{
+    var restaurant = (BulkImportRestaurants.Models.Restaurant)ViewBag.Restaurant;
+    ViewData["Title"] = restaurant.Name + " – Menu";
+}
+
+<h2>@restaurant.Name – Menu</h2>
+
+<p>@restaurant.Description</p>
+<p><strong>Address:</strong> @restaurant.Address</p>
+<p><strong>Phone:</strong> @restaurant.Phone</p>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <p>No approved menu items yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Currency</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in Model)
+            {
+                <tr>
+                    <td>@m.Title</td>
+                    <td>@m.Price</td>
+                    <td>@m.Currency</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
