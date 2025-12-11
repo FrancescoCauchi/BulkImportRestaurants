@@ -1,0 +1,41 @@
+﻿@model IEnumerable<BulkImportRestaurants.Models.Restaurant>
+
+@{
+    ViewData["Title"] = "Pending Restaurants";
+}
+
+<h2>Pending Restaurants (Site Admin)</h2>
+
+@if (!Model.Any())
+{
+    <p>No pending restaurants.</p>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Owner Email</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td>@r.Id</td>
+                    <td>@r.Name</td>
+                    <td>@r.OwnerEmailAddress</td>
+                    <td>
+                        <form asp-action="ApproveRestaurant" method="post">
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

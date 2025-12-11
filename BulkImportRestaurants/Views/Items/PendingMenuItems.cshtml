@@ -1,0 +1,43 @@
+﻿@model IEnumerable<BulkImportRestaurants.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "Pending Menu Items";
+}
+
+<h2>Pending Menu Items (Restaurant Owner)</h2>
+
+@if (!Model.Any())
+{
+    <p>No pending menu items.</p>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Guid</th>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Restaurant Id</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in Model)
+            {
+                <tr>
+                    <td>@m.Guid</td>
+                    <td>@m.Title</td>
+                    <td>@m.Price @m.Currency</td>
+                    <td>@m.RestaurantId</td>
+                    <td>
+                        <form asp-action="ApproveMenuItem" method="post">
+                            <input type="hidden" name="guid" value="@m.Guid" />
+                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
