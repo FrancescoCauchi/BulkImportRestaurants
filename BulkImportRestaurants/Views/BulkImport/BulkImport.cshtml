@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "Bulk Import";
+}
+
+<h2>Bulk Import JSON</h2>
+
+<form asp-action="BulkImport" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label">Upload JSON file</label>
+        <input type="file" name="jsonFile" class="form-control" />
+    </div>
+
+    <p class="text-center">OR</p>
+
+    <div class="mb-3">
+        <label class="form-label">Paste JSON text</label>
+        <textarea name="jsonText" class="form-control" rows="8"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Preview Import</button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="text-danger mt-3">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
