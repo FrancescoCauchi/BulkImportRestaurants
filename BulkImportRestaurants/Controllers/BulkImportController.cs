@@ -8,14 +8,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BulkImportRestaurants.Controllers
 {
-    [Authorize] // user must be logged in to bulk import
+    [Authorize] // user must be logged in to use bulk import
     public class BulkImportController : Controller
     {
         private readonly ItemsInMemoryRepository _memoryRepo;
+        private readonly ItemsDbRepository _dbRepo;
 
-        public BulkImportController(ItemsInMemoryRepository memoryRepo)
+        public BulkImportController(ItemsInMemoryRepository memoryRepo, ItemsDbRepository dbRepo)
         {
             _memoryRepo = memoryRepo;
+            _dbRepo = dbRepo;
         }
 
         // GET: /BulkImport/BulkImport
@@ -48,13 +50,13 @@ namespace BulkImportRestaurants.Controllers
                 json = jsonText;
             }
 
-            // Use the Factory to build objects
+            // Use the factory to build objects
             var items = ImportItemFactory.Create(json);
 
-            // Save to in-memory repo for preview
+            // Save to in-memory repository for preview
             _memoryRepo.SaveItems(items);
 
-            // Build view model
+            // Build view model for the preview page
             var vm = new BulkImportPreviewViewModel
             {
                 Restaurants = items.OfType<Restaurant>().ToList(),
@@ -62,6 +64,29 @@ namespace BulkImportRestaurants.Controllers
             };
 
             return View("Preview", vm);
+        }
+
+        // POST: /BulkImport/Commit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Commit()
+        {
+            var items = _memoryRepo.GetItems();
+
+            if (items == null || !items.Any())
+            {
+                TempData["Error"] = "No items to commit. Please upload JSON first.";
+                return RedirectToAction("BulkImport");
+            }
+
+            // Save to DB (status remains 'pending')
+            _dbRepo.SaveItems(items);
+
+            // Clear the in-memory store
+            _memoryRepo.Clear();
+
+            TempData["Message"] = "Items saved to database and pending approval.";
+            return RedirectToAction("BulkImport");
         }
     }
 }

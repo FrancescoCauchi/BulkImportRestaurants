@@ -6,16 +6,19 @@
 
 <h2>Preview Imported Data</h2>
 
-<h3>Restaurants</h3>
+<h3 class="mt-4">Restaurants</h3>
 
 @if (Model.Restaurants.Any())
 {
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Id</th>
+                <th>ID</th>
                 <th>Name</th>
                 <th>Owner Email</th>
+                <th>Description</th>
+                <th>Address</th>
+                <th>Phone</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -26,6 +29,9 @@
                     <td>@r.Id</td>
                     <td>@r.Name</td>
                     <td>@r.OwnerEmailAddress</td>
+                    <td>@r.Description</td>
+                    <td>@r.Address</td>
+                    <td>@r.Phone</td>
                     <td>@r.Status</td>
                 </tr>
             }
@@ -34,20 +40,21 @@
 }
 else
 {
-    <p>No restaurants in this import.</p>
+    <p>No restaurants found in the import.</p>
 }
 
-<h3>Menu Items</h3>
+<h3 class="mt-4">Menu Items</h3>
 
 @if (Model.MenuItems.Any())
 {
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Guid</th>
+                <th>GUID</th>
                 <th>Title</th>
                 <th>Price</th>
-                <th>Restaurant Id</th>
+                <th>Currency</th>
+                <th>Restaurant ID</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -57,7 +64,8 @@ else
                 <tr>
                     <td>@m.Guid</td>
                     <td>@m.Title</td>
-                    <td>@m.Price @m.Currency</td>
+                    <td>@m.Price</td>
+                    <td>@m.Currency</td>
                     <td>@m.RestaurantId</td>
                     <td>@m.Status</td>
                 </tr>
@@ -67,9 +75,15 @@ else
 }
 else
 {
-    <p>No menu items in this import.</p>
+    <p>No menu items found in the import.</p>
 }
 
-<p class="mt-3">
-    (Later we will add a <strong>Commit</strong> button here to save to the database and generate the ZIP.)
+<form asp-action="Commit" method="post" class="mt-4">
+    <button type="submit" class="btn btn-success">
+        Commit Import (Save to Database)
+    </button>
+</form>
+
+<p class="mt-3 text-muted">
+    After committing, items are saved with status <strong>pending</strong> and will require approval.
 </p>
