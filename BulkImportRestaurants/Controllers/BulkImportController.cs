@@ -1,9 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using BulkImportRestaurants.Models;
 using BulkImportRestaurants.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BulkImportRestaurants.Controllers
@@ -13,11 +16,16 @@ namespace BulkImportRestaurants.Controllers
     {
         private readonly ItemsInMemoryRepository _memoryRepo;
         private readonly ItemsDbRepository _dbRepo;
+        private readonly IWebHostEnvironment _env;
 
-        public BulkImportController(ItemsInMemoryRepository memoryRepo, ItemsDbRepository dbRepo)
+        public BulkImportController(
+            ItemsInMemoryRepository memoryRepo,
+            ItemsDbRepository dbRepo,
+            IWebHostEnvironment env)
         {
             _memoryRepo = memoryRepo;
             _dbRepo = dbRepo;
+            _env = env;
         }
 
         // GET: /BulkImport/BulkImport
@@ -82,11 +90,72 @@ namespace BulkImportRestaurants.Controllers
             // Save to DB (status remains 'pending')
             _dbRepo.SaveItems(items);
 
+            // Create ZIP structure under wwwroot/uploads
+            var zipRelativePath = CreateZipForItems(items);
+
             // Clear the in-memory store
             _memoryRepo.Clear();
 
-            TempData["Message"] = "Items saved to database and pending approval.";
+            TempData["Message"] = $"Items saved to database and pending approval. ZIP generated at: {zipRelativePath}";
             return RedirectToAction("BulkImport");
+        }
+
+        /// <summary>
+        /// Creates a folder per restaurant with default.jpg and zips it.
+        /// Returns the relative path to the zip file (for showing a link later).
+        /// </summary>
+        private string CreateZipForItems(System.Collections.Generic.List<IItemValidating> items)
+        {
+            // Unique id for this import
+            var importId = Guid.NewGuid().ToString("N");
+
+            // wwwroot path
+            var webRoot = _env.WebRootPath;
+
+            // Base folder for this import
+            var uploadsRoot = Path.Combine(webRoot, "uploads");
+            Directory.CreateDirectory(uploadsRoot);
+
+            var importFolder = Path.Combine(uploadsRoot, importId);
+            Directory.CreateDirectory(importFolder);
+
+            // Path to default image
+            var defaultImagePath = Path.Combine(webRoot, "images", "default.jpg");
+            bool hasDefault = System.IO.File.Exists(defaultImagePath);
+
+            // For each restaurant, create a folder and copy default.jpg (if exists)
+            var restaurants = items.OfType<Restaurant>().ToList();
+
+            foreach (var r in restaurants)
+            {
+                if (string.IsNullOrWhiteSpace(r.Id))
+                    continue;
+
+                var restaurantFolder = Path.Combine(importFolder, r.Id);
+                Directory.CreateDirectory(restaurantFolder);
+
+                if (hasDefault)
+                {
+                    var destImagePath = Path.Combine(restaurantFolder, "default.jpg");
+                    // Overwrite if exists
+                    System.IO.File.Copy(defaultImagePath, destImagePath, overwrite: true);
+                }
+            }
+
+            // Create zip file from the import folder
+            var zipFileName = importId + ".zip";
+            var zipFullPath = Path.Combine(uploadsRoot, zipFileName);
+
+            if (System.IO.File.Exists(zipFullPath))
+            {
+                System.IO.File.Delete(zipFullPath);
+            }
+
+            ZipFile.CreateFromDirectory(importFolder, zipFullPath);
+
+            // Return a path that can be used in <a href> later
+            var relativeZipPath = "/uploads/" + zipFileName;
+            return relativeZipPath;
         }
     }
 }

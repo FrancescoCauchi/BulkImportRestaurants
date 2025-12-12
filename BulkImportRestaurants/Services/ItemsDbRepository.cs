@@ -40,14 +40,23 @@ namespace BulkImportRestaurants.Services
             foreach (var item in items)
             {
                 if (item is Restaurant r)
-                    _db.Restaurants.Add(r);
+                {
+                    bool exists = _db.Restaurants.Any(x => x.Id == r.Id);
+                    if (!exists)
+                        _db.Restaurants.Add(r);
+                }
 
                 if (item is MenuItem m)
-                    _db.MenuItems.Add(m);
+                {
+                    bool exists = _db.MenuItems.Any(x => x.Guid == m.Guid);
+                    if (!exists)
+                        _db.MenuItems.Add(m);
+                }
             }
 
             _db.SaveChanges();
         }
+
 
         public void Clear()
         {
