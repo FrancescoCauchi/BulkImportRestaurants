@@ -1,21 +1,31 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace BulkImportRestaurants.Models
 {
     public class MenuItem : IItemValidating
     {
         [Key]
-        public string Guid { get; set; }  // Example: M-2001
+        public string Guid { get; set; }   // this is the JSON "id" like M-2001
 
+        [Required]
         public string Title { get; set; }
-        public double Price { get; set; }
-        public string Currency { get; set; }
-        public string Status { get; set; } = "pending";
 
+        [Required]
+        public double Price { get; set; }
+
+        [Required]
+        public string Currency { get; set; }
+
+        [Required]
         public string RestaurantId { get; set; }
+
+        [Required]
+        public string Status { get; set; } = "pending";
 
         public List<string> GetValidators()
         {
+            // Validator depends on restaurant owner (handled in ApprovalFilter)
             return new List<string>();
         }
 

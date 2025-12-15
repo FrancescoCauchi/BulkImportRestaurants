@@ -1,28 +1,32 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace BulkImportRestaurants.Models
 {
     public class Restaurant : IItemValidating
     {
         [Key]
-        public string Id { get; set; }   // Example: R-1001
+        public string Id { get; set; }
 
+        [Required]
         public string Name { get; set; }
-        public string OwnerEmailAddress { get; set; }
-        public string Status { get; set; } = "pending";
 
         public string Description { get; set; }
+
+        [Required]
+        public string OwnerEmailAddress { get; set; }
+
         public string Address { get; set; }
+
         public string Phone { get; set; }
 
-        // Required by the assignment
+        [Required]
+        public string Status { get; set; } = "pending";
+
         public List<string> GetValidators()
         {
-            return new List<string>
-            {
-                OwnerEmailAddress,
-                "siteadmin@example.com"
-            };
+            // Hard-coded admin email (as allowed by spec)
+            return new List<string> { "admin@example.com" };
         }
 
         public string GetCardPartial()

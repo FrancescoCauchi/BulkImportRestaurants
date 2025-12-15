@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using BulkImportRestaurants.Filters;
 using BulkImportRestaurants.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -17,45 +18,52 @@ namespace BulkImportRestaurants.Controllers
         public ItemsController(
             ItemsDbRepository dbRepo,
             UserManager<IdentityUser> userManager,
-            IConfiguration config)
+            IConfiguration configuration)
         {
             _dbRepo = dbRepo;
             _userManager = userManager;
-            _adminEmail = config["AdminEmail"]; // from appsettings.json
+            _adminEmail = configuration["AdminEmail"];
         }
 
+        // ---------------------------------------------------------
+        // Verification page (decides what to show based on user)
+        // ---------------------------------------------------------
         // GET: /Items/Verification
         public async Task<IActionResult> Verification()
         {
             var user = await _userManager.GetUserAsync(User);
             var email = user?.Email ?? "";
 
+            // SITE ADMIN → pending restaurants
             if (email == _adminEmail)
             {
-                // Site admin: see pending restaurants
                 var pendingRestaurants = _dbRepo.GetPendingRestaurants();
                 return View("PendingRestaurants", pendingRestaurants);
             }
-            else
-            {
-                // Restaurant owner: see pending menuitems for their restaurants
-                var pendingMenus = _dbRepo.GetPendingMenuItemsForOwner(email);
-                return View("PendingMenuItems", pendingMenus);
-            }
+
+            // RESTAURANT OWNER → pending menu items
+            var pendingMenuItems = _dbRepo.GetPendingMenuItemsForOwner(email);
+            return View("PendingMenuItems", pendingMenuItems);
         }
 
-        // POST: /Items/ApproveRestaurant/R-1001
+        // ---------------------------------------------------------
+        // Approve Restaurant (ADMIN ONLY)
+        // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ServiceFilter(typeof(ApprovalFilter))]
         public IActionResult ApproveRestaurant(string id)
         {
             _dbRepo.ApproveRestaurant(id);
             return RedirectToAction("Verification");
         }
 
-        // POST: /Items/ApproveMenuItem/M-2001
+        // ---------------------------------------------------------
+        // Approve Menu Item (OWNER ONLY)
+        // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [ServiceFilter(typeof(ApprovalFilter))]
         public IActionResult ApproveMenuItem(string guid)
         {
             _dbRepo.ApproveMenuItem(guid);
