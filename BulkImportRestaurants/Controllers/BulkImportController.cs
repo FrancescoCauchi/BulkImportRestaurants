@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BulkImportRestaurants.Controllers
 {
-    [Authorize] // user must be logged in to use bulk import
+    [Authorize]
     public class BulkImportController : Controller
     {
         private readonly ItemsInMemoryRepository _memoryRepo;
@@ -58,13 +58,10 @@ namespace BulkImportRestaurants.Controllers
                 json = jsonText;
             }
 
-            // Use the factory to build objects
             var items = ImportItemFactory.Create(json);
 
-            // Save to in-memory repository for preview
             _memoryRepo.SaveItems(items);
 
-            // Build view model for the preview page
             var vm = new BulkImportPreviewViewModel
             {
                 Restaurants = items.OfType<Restaurant>().ToList(),
@@ -87,45 +84,44 @@ namespace BulkImportRestaurants.Controllers
                 return RedirectToAction("BulkImport");
             }
 
-            // Save to DB (status remains 'pending')
+            // 1) Create folders + copy default image + set Restaurant.ImagePath
+            var zipRelativePath = CreateZipForItemsAndSetImagePaths(items);
+
+            // 2) Save items to DB AFTER image paths are set
             _dbRepo.SaveItems(items);
 
-            // Create ZIP structure under wwwroot/uploads
-            var zipRelativePath = CreateZipForItems(items);
-
-            // Clear the in-memory store
+            // 3) Clear preview
             _memoryRepo.Clear();
 
-            TempData["Message"] = $"Items saved to database and pending approval. ZIP generated at: {zipRelativePath}";
+            TempData["Message"] = "Items saved to database and pending approval.";
+            TempData["ZipPath"] = zipRelativePath; // optional for download button
             return RedirectToAction("BulkImport");
         }
 
         /// <summary>
-        /// Creates a folder per restaurant with default.jpg and zips it.
-        /// Returns the relative path to the zip file (for showing a link later).
+        /// Creates /wwwroot/uploads/{importId}/{RestaurantId}/default.jpg and zips it to /wwwroot/uploads/{importId}.zip
+        /// Also sets Restaurant.ImagePath so the catalog can show images.
+        /// Returns zip path like "/uploads/{importId}.zip"
         /// </summary>
-        private string CreateZipForItems(System.Collections.Generic.List<IItemValidating> items)
+        private string CreateZipForItemsAndSetImagePaths(System.Collections.Generic.List<IItemValidating> items)
         {
-            // Unique id for this import
             var importId = Guid.NewGuid().ToString("N");
-
-            // wwwroot path
             var webRoot = _env.WebRootPath;
 
-            // Base folder for this import
+            // Ensure uploads root exists
             var uploadsRoot = Path.Combine(webRoot, "uploads");
             Directory.CreateDirectory(uploadsRoot);
 
+            // Create import folder
             var importFolder = Path.Combine(uploadsRoot, importId);
             Directory.CreateDirectory(importFolder);
 
-            // Path to default image
+            // Default image source
             var defaultImagePath = Path.Combine(webRoot, "images", "default.jpg");
-            bool hasDefault = System.IO.File.Exists(defaultImagePath);
+            var hasDefault = System.IO.File.Exists(defaultImagePath);
 
-            // For each restaurant, create a folder and copy default.jpg (if exists)
+            // Create restaurant folders + copy image + set DB image path
             var restaurants = items.OfType<Restaurant>().ToList();
-
             foreach (var r in restaurants)
             {
                 if (string.IsNullOrWhiteSpace(r.Id))
@@ -137,25 +133,28 @@ namespace BulkImportRestaurants.Controllers
                 if (hasDefault)
                 {
                     var destImagePath = Path.Combine(restaurantFolder, "default.jpg");
-                    // Overwrite if exists
                     System.IO.File.Copy(defaultImagePath, destImagePath, overwrite: true);
+
+                    // Web path stored in DB
+                    r.ImagePath = $"/uploads/{importId}/{r.Id}/default.jpg";
+                }
+                else
+                {
+                    // If default.jpg doesn't exist, keep it null (no image displayed)
+                    r.ImagePath = null;
                 }
             }
 
-            // Create zip file from the import folder
+            // Create zip from import folder
             var zipFileName = importId + ".zip";
             var zipFullPath = Path.Combine(uploadsRoot, zipFileName);
 
             if (System.IO.File.Exists(zipFullPath))
-            {
                 System.IO.File.Delete(zipFullPath);
-            }
 
             ZipFile.CreateFromDirectory(importFolder, zipFullPath);
 
-            // Return a path that can be used in <a href> later
-            var relativeZipPath = "/uploads/" + zipFileName;
-            return relativeZipPath;
+            return "/uploads/" + zipFileName;
         }
     }
 }

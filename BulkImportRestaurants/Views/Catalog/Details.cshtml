@@ -7,9 +7,28 @@
 
 <h2>@restaurant.Name – Menu</h2>
 
-<p>@restaurant.Description</p>
-<p><strong>Address:</strong> @restaurant.Address</p>
-<p><strong>Phone:</strong> @restaurant.Phone</p>
+@if (!string.IsNullOrEmpty(restaurant.ImagePath))
+{
+    <img src="@restaurant.ImagePath"
+         class="img-fluid mb-3"
+         alt="@restaurant.Name"
+         style="max-height:300px; width:100%; object-fit:cover;" />
+}
+
+@if (!string.IsNullOrEmpty(restaurant.Description))
+{
+    <p>@restaurant.Description</p>
+}
+
+@if (!string.IsNullOrEmpty(restaurant.Address))
+{
+    <p><strong>Address:</strong> @restaurant.Address</p>
+}
+
+@if (!string.IsNullOrEmpty(restaurant.Phone))
+{
+    <p><strong>Phone:</strong> @restaurant.Phone</p>
+}
 
 <hr />
 
@@ -39,3 +58,5 @@ else
         </tbody>
     </table>
 }
+
+<a asp-action="Index" class="btn btn-secondary btn-sm">Back to Catalog</a>

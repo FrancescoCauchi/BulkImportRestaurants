@@ -16,13 +16,31 @@ else
         @foreach (var r in Model)
         {
             <div class="col-md-4 mb-3">
-                <div class="card">
+                <div class="card h-100">
+
+                    @if (!string.IsNullOrEmpty(r.ImagePath))
+                    {
+                        <img src="@r.ImagePath"
+                             class="card-img-top"
+                             alt="@r.Name"
+                             style="height:200px; object-fit:cover;" />
+                    }
+
                     <div class="card-body">
                         <h5 class="card-title">@r.Name</h5>
-                        <p class="card-text">@r.Description</p>
-                        <p class="card-text">
-                            <small class="text-muted">@r.Address</small>
-                        </p>
+
+                        @if (!string.IsNullOrEmpty(r.Description))
+                        {
+                            <p class="card-text">@r.Description</p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(r.Address))
+                        {
+                            <p class="card-text">
+                                <small class="text-muted">@r.Address</small>
+                            </p>
+                        }
+
                         <a asp-action="Details" asp-route-id="@r.Id" class="btn btn-primary btn-sm">
                             View Menu
                         </a>
