@@ -19,11 +19,11 @@ namespace BulkImportRestaurants.Models
         public string Address { get; set; }
 
         public string Phone { get; set; }
-        public string ImagePath { get; set; }
-
 
         [Required]
         public string Status { get; set; } = "pending";
+        public string ImagePath { get; set; }
+
 
         public List<string> GetValidators()
         {
